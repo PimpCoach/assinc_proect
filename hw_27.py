@@ -1,14 +1,15 @@
 import asyncio
+import openai
 import os
 
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
+load_dotenv()
 
 from hw_27_data import DATA
 
-VLADIMIR_KEY_VSE_GPT = os.getenv("VLADIMIR_KEY_VSE_GPT")
-BASE_URL = os.getenv("BASE_URL", "https://api.vsegpt.ru/v1")Ё
-load_dotenv()
+MY_KEY_VSE_GPT = os.getenv("MY_KEY_VSE_GPT")
+BASE_URL = os.getenv("BASE_URL", "https://api.vsegpt.ru/v1")
 
 MAX_CHUNKS_SIZE = 5000  # Максимальная длина текста для 1 запроса
 SLEEP_TIME = 4  # Задержка между запросами
@@ -94,7 +95,7 @@ PROMPT_CONSPECT_WRITER = """
 {text_to_work}
 """
 
-client = AsyncOpenAI(api_key=VLADIMIR_KEY_VSE_GPT, base_url=BASE_URL)
+client = AsyncOpenAI(api_key=MY_KEY_VSE_GPT, base_url=BASE_URL)
 model_gpt = "openai/gpt-4o-mini" #Идентификатор используемой модели
 max_tokens_gpt = 16000 #Максимальное количество жетонов, которое может быть сгенерировано в завершении чата. Это значение можно использовать для контроля стоимости текста.
 temperature_gpt = 0.7 #Температура выборки (фантазия) может использоваться, от 0 до 2 
@@ -139,3 +140,46 @@ async def get_ai_requst(prompt: str, max_retries: int = 3, base_delay: float = 2
                 raise
             delay = base_delay * (2 ** attempt)
             await asyncio.sleep(delay)
+
+def split_text_to_chunks(data: list) -> list: 
+    """
+    Разбивает текст на куски не более чем MAX_CHUNKS_SIZE символов
+    """
+    chunks = []
+    current_chunk = ''
+
+    for item in data:
+        text = item['text'] # Берем текст из списка словарей с ключем 'text'
+        if len(current_chunk) + len(text) <= MAX_CHUNKS_SIZE:
+            current_chunk += text # Если новый текст поместится в текущий, то добавляем его к 'current_chunk" и копим до длины MAX_CHUNK_SIZE
+        else:
+            if current_chunk: # Если не помещается, то сохраняем накопленный текст в список chunks
+                chunks.append(current_chunk)
+            current_chunk = text # Начинаем новый current_chunk с текущего места
+
+    if current_chunk: # Проверяем остался ли еще текст и если да, то сохраняем в список current_chunk 
+                chunks.append(current_chunk)
+
+    return chunks
+
+def save_to_markdown(timestamps: str, theme: str, chunks: list):
+    """
+    Сохраняет результаты в markdown файл
+    :param timestamps - таймкоды
+    :theme - темы
+    :chunks - куски конспекта от сервера
+    
+    """
+    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+        f.write("# Таймкод\n\n")
+        f.write(timestamps)
+        f.write("\n\n---\n\n")
+
+        f.write("# Тема\n\n")
+        f.write(theme)
+        f.write("\n\n---\n\n")
+
+        f.write("# Конспект\n\n")
+        for chunk in chunks:
+            f.write(chunk)
+            f.write("\n\n---\n\n")
