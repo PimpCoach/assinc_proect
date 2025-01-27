@@ -100,7 +100,7 @@ PROMPT_CONSPECT_WRITER = """
 client = AsyncOpenAI(api_key=MY_KEY_VSE_GPT, base_url=BASE_URL)
 model_gpt = "openai/gpt-4o-mini"  # Идентификатор используемой модели
 max_tokens_gpt = 16000  # Максимальное количество жетонов, которое может быть сгенерировано в завершении чата. Это значение можно использовать для контроля стоимости текста.
-temperature_gpt = 0.7  # Температура выборки (фантазия) может использоваться, от 0 до 2
+temperature_gpt = 0.4  # Температура выборки (фантазия) может использоваться, от 0 до 2
 
 
 async def get_ai_request(prompt: str, max_retries: int = 3, base_delay: float = 2.0):
@@ -178,7 +178,7 @@ def save_to_markdown(timestamps: str, theme: str, chunks: list):
 
     """
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write("# Таймкод\n")
+        f.write("# Таймкод\n\n")
         f.write(timestamps)
         f.write("\n\n---\n\n")
 
